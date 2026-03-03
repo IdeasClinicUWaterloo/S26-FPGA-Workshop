@@ -12,6 +12,7 @@
         # Development environment
         devShell = mkShell {
           nativeBuildInputs = [
+            surfer
             gnumake
             python3
             python313Packages.cocotb

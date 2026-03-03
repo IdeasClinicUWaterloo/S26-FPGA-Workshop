@@ -5,7 +5,7 @@
 SIM ?= verilator
 TOPLEVEL_LANG ?= verilog   # verilog means Verilog or SystemVerilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = top.sv
+PROJECT_SOURCES = top.sv memory_ro.sv
 
 # Only gate-level SIM
 SIM_BUILD = sim_build/rtl

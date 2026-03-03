@@ -8,4 +8,10 @@ Both may be run in alternate sequence to introduce students to different FPGA ap
 ## Verilator in development
 
 To increase throughput in development time, cocotb and Verilator may be used to run a C++ simulation of the RTL. This technique may also be used in the workshop.
+To make use of the simulation and testing features:
 
+1. Install dependencies.
+1. Go to `./test`
+2. Run `make`: this should build all of the 
+
+NOTE! Memory files must be included in the ./test directory, not the ./src directory.
