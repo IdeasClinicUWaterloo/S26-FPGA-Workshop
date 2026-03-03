@@ -50,3 +50,8 @@
 *.tcl
 *sopc_*
 PLLJ_PLLSPE_INFO.txt # The generated PLL specification file
+.direnv/
+test/results.xml
+__pycache__/
+sim_build/
+dump.fst
