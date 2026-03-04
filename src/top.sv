@@ -1,22 +1,19 @@
 module top(
-  input       clk,
-  input [9:0] set_addr,
-  output [15:0] read_data,
-  output led_alive
+  input                clk,
+  input                reset,
+  input signed [23:0]  xr_in, xi_in,
+  output               fft_valid,
+  output signed [23:0] fftr, ffti
 );
 
-  localparam N_TWIDDLE_ELEMS = 1024;
-  
-  assign led_alive = 1'b1;
-  
-  memory_ro #(
-    .INIT_SRC("cosine_samples.mem"),
-    .N(N_TWIDDLE_ELEMS),
-    .BITW(16)
-  ) memory_ro_inst (
+  fft #(.N(512)) fft_inst(
     .clk(clk),
-    .addr(set_addr),
-    .data(read_data)
+    .reset(reset),
+    .xi_in(xi_in),
+    .xr_in(xr_in),
+    .fft_valid(fft_valid),
+    .fftr(fftr),
+    .ffti(ffti)
   );
 
 endmodule  

@@ -15,18 +15,23 @@ module tb ();
 
   // INPUT INTO DUT
   logic clk;
-  logic [9:0] set_addr;
+  logic reset;
+  logic signed [23:0] xr_in, xi_in;
+
 
   // OUTPUT FROM DUT
-  logic [15:0] read_data;
-  logic led_alive;
+  logic               fft_valid;
+  logic signed [23:0] fftr, ffti;
 
   // Design Under Test
   top dut(
     .clk(clk),
-    .set_addr(set_addr),
-    .read_data(read_data),
-    .led_alive(led_alive)
+    .reset(reset),
+    .xi_in(xi_in),
+    .xr_in(xr_in),
+    .fft_valid(fft_valid),
+    .fftr(fftr),
+    .ffti(ffti)
   );
 
 endmodule

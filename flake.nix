@@ -16,6 +16,8 @@
             gnumake
             python3
             python313Packages.cocotb
+            python313Packages.pytest
+            python313Packages.numpy
             verilator
             zlib
           ];
