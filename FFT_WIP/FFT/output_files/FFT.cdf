@@ -4,7 +4,7 @@ JedecChain;
 	DefaultMfr(6E);
 
 	P ActionCode(Cfg)
-		Device PartName(5CGXFC5C6F27) Path("C:/Users/caitk/Downloads/FFT/output_files/") File("FFT.sof") MfrSpec(OpMask(1));
+		Device PartName(5CGXFC5C6F27) Path("C:/Users/caitk/Downloads/UpdatedFPGAWorkshop/FFT_WIP/FFT/output_files/") File("FFT.sof") MfrSpec(OpMask(1));
 
 ChainEnd;
 

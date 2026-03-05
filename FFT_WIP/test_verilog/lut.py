@@ -1,7 +1,6 @@
 import numpy as np
 import math
 
-
 def int_to_twos_complement_hex(number, bits):
     """
     Return the 2's complement hexadecimal representation of a number 
@@ -21,11 +20,14 @@ scale = 2**15  # Q1.15
 N = 512
 
 for k in range(256):
-    cos_val = round(scale*math.sin((2*math.pi*k)/N))
+    cos_val = round(scale*math.cos((2*math.pi*k)/N))
+
+    # Generate sine wave: A * sin(2 * pi * f * n / N)
+    #cos_val = 20*round(math.sin(2*math.pi*10*k/512))
 
     c = 0; 
     if cos_val < 0:
         c = int_to_twos_complement_hex(cos_val, 16)
     else: 
         c = hex(cos_val)
-    print(c)
+    print(cos_val)

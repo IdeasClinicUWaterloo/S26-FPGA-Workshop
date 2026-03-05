@@ -10,7 +10,7 @@ module fft_512_tb;
     // DUT Signals
     reg clk;
     reg reset;
-    reg signed [23:0] xr_in, xi_in;
+    reg signed [23:0] xr_in;
     wire fft_valid;
     wire signed [23:0] fftr, ffti;
 
@@ -24,7 +24,6 @@ module fft_512_tb;
         .clk(clk),
         .reset(reset),
         .xr_in(xr_in),
-        .xi_in(xi_in),
         .fft_valid(fft_valid),
         .fftr(fftr),
         .ffti(ffti)
@@ -39,7 +38,6 @@ module fft_512_tb;
         // Initialize
         reset = 1;
         xr_in = 17'sd0;
-        xi_in = 17'sd0;
         
         // Hold reset
         repeat(10) @(posedge clk);
@@ -51,13 +49,11 @@ module fft_512_tb;
         for (i = 0; i < N; i = i + 1) begin
             // Generate sine wave: A * sin(2 * pi * f * n / N)
             xr_in <= $rtoi(amplitude * $sin(2.0 * PI * cycles * i / N));
-            xi_in <= 17'sd0; 
             @(posedge clk);
         end
         
         // Clear inputs after loading
         xr_in <= 17'sd0;
-        xi_in <= 17'sd0;
         $display("Status: Load complete. Processing...");
 
         // --- STEP 2: CALCULATION PHASE ---
