@@ -8,17 +8,25 @@ module fft_ram #(
     input  wire clock,
 
     input  wire [ADDR_W-1:0] address_a,
-    input  wire [WIDTH-1:0]  data_a,
+    input  logic signed [WIDTH-1:0]  data_a,
     input  wire              wren_a,
-    output reg  [WIDTH-1:0]  q_a,
+    output logic signed  [WIDTH-1:0]  q_a,
 
     input  wire [ADDR_W-1:0] address_b,
-    input  wire [WIDTH-1:0]  data_b,
+    input  logic signed [WIDTH-1:0]  data_b,
     input  wire              wren_b,
-    output reg  [WIDTH-1:0]  q_b
+    output logic signed  [WIDTH-1:0]  q_b
 );
 
 reg [WIDTH-1:0] mem [0:DEPTH-1];
+
+integer i;
+initial begin
+    for (i = 0; i < DEPTH; i = i + 1)
+        mem[i] = '0;
+        q_a = '0;
+        q_b = '0;
+end
 
 always @(posedge clock) begin
 

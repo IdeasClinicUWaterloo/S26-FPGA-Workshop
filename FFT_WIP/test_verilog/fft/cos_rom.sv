@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 
 module cos_rom (
-    input  wire [7:0]  address,
+    input  wire [8:0]  address,
     input  wire        clock,
     output reg  signed [15:0] q
 );
@@ -11,7 +11,7 @@ module cos_rom (
 
     // Load ROM contents
     initial begin
-        $readmemh("cos_lut.txt", mem);
+        $readmemh("fft/cos_lut.txt", mem);
     end
 
     // synchronous read

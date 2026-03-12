@@ -1,7 +1,7 @@
 `timescale 1ns/1ps
 
 module sin_rom (
-    input  wire [7:0]  address,
+    input  wire [8:0]  address,
     input  wire        clock,
     output reg  signed [15:0] q
 );
@@ -11,7 +11,7 @@ module sin_rom (
 
     // Load ROM contents
     initial begin
-        $readmemh("sin_lut.txt", mem);
+        $readmemh("fft/sin_lut.txt", mem);
     end
 
     // synchronous read

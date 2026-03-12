@@ -1,51 +1,30 @@
 import re
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 
-# ---- read log (your file is UTF-16) ----
-path = "simulation_log.txt"   # or full path if needed
-with open(path, "r", encoding="utf-16", errors="ignore") as f:
-    text = f.read()
+log_file = "simulation_log.txt"
 
-# ---- parse "Bin ... | Real: ... | Imag: ..." lines ----
-pattern = re.compile(r"Bin\s+(\d+)\s*\|\s*Real:\s*(-?\d+)\s*\|\s*Imag:\s*(-?\d+)")
-rows = [(int(b), int(r), int(i)) for b, r, i in pattern.findall(text)]
+bins = []
+mags = []
 
-if not rows:
-    raise RuntimeError("No FFT bin lines found. Check file encoding / format.")
+pattern = re.compile(r"FFT bin\s+(\d+)\s+\|\s+Mag=(\d+)")
 
-bins = np.array([b for b,_,_ in rows], dtype=int)
-real = np.array([r for _,r,_ in rows], dtype=float)
-imag = np.array([i for _,_,i in rows], dtype=float)
-mag  = np.sqrt(real**2 + imag**2)
+with open(log_file, "r", encoding="utf-16") as f:
+    for line in f:
+        match = pattern.search(line)
+        if match:
+            bins.append(int(match.group(1)))
+            mags.append(int(match.group(2)))
 
-df = pd.DataFrame({"bin": bins, "real": real.astype(int), "imag": imag.astype(int), "mag": mag})
+print(f"Found {len(bins)} FFT bins")
 
-# ---- show top peaks ----
-top = df.sort_values("mag", ascending=False).head(12)
-print("\nTop FFT bins by magnitude:")
-print(top.to_string(index=False))
+if not bins:
+    print("No FFT data found.")
+    exit()
 
-# ---- plot linear magnitude ----
-plt.figure(figsize=(12,4))
-plt.plot(bins, mag)
-plt.title("FFT Output Magnitude vs Bin (linear)")
-plt.xlabel("Bin")
+plt.figure(figsize=(12,5))
+plt.plot(bins, mags)
+plt.xlabel("FFT Bin")
 plt.ylabel("Magnitude")
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()
-
-# ---- plot dB magnitude ----
-eps = 1e-9
-mag_db = 20*np.log10(mag + eps)
-
-plt.figure(figsize=(12,4))
-plt.plot(bins, mag_db)
-plt.title("FFT Output Magnitude vs Bin (dB, relative)")
-plt.xlabel("Bin")
-plt.ylabel("Magnitude (dB)")
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
+plt.title("FFT Magnitude Spectrum")
+plt.grid(True)
 plt.show()
