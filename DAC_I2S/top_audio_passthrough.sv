@@ -71,38 +71,33 @@ module top_audio_passthrough (
     // 4. AUDIO EFFECTS
     // ========================================================
 
-    logic signed [15:0] echo_audio;
-    logic signed [15:0] filter_audio;
-    logic signed [15:0] mod_audio;
     logic signed [15:0] processed_audio;
 
-    echo u_echo (
-        .clk(clk_50m),
+    /*echo u_echo (
+        .clk(bclk),
         .reset(!rst_n),
         .sample(formatted_audio),
         .sample_valid(mic_data_valid),
-        .sample_out(echo_audio)
-    );
+        .sample_out(processed_audio)
+    );*/
 
     fourth_order_lpf u_filter (
         .clk(clk_50m),
         .reset(!rst_n),
         .data_in(formatted_audio),
         .data_valid(mic_data_valid),
-        .data_out(filter_audio)
+        .data_out(processed_audio)
     );
 
-    modulation amp_mod (
+    /*modulation amp_mod (
         .clk(clk_50m),
         .reset(!rst_n),
         .data_in(formatted_audio),
         .data_valid(mic_data_valid),
-        .data_out(mod_audio)
-    );
+        .data_out(processed_audio)
+    );*/
 	 
 	 
-	assign processed_audio = echo_audio;
-
 
     // ========================================================
     // 5. I2S TRANSMITTER INSTANTIATION
