@@ -11,7 +11,10 @@ module top_audio_passthrough (
     // --- I2S DAC Pins ---
     output logic i2s_bclk,     // Bit Clock
     output logic i2s_lrck,     // Word Select (Left/Right)
-    output logic i2s_din       // Serial Data In
+    output logic i2s_din,       // Serial Data In
+	 
+	 // --- SWITCHES ---
+	 input logic [9:0] sw
 );
 
     // ========================================================
@@ -63,15 +66,52 @@ module top_audio_passthrough (
     //    multiply the volume to boost your 400mV peak-to-peak signal.
     
     assign formatted_audio = ($signed({4'b0000, raw_mic_data}) - 16'sd1650) <<< 5;
+	 
+	 // ========================================================
+    // 4. AUDIO EFFECTS
+    // ========================================================
+
+    logic signed [15:0] echo_audio;
+    logic signed [15:0] filter_audio;
+    logic signed [15:0] mod_audio;
+    logic signed [15:0] processed_audio;
+
+    echo u_echo (
+        .clk(clk_50m),
+        .reset(!rst_n),
+        .sample(formatted_audio),
+        .sample_valid(mic_data_valid),
+        .sample_out(echo_audio)
+    );
+
+    fourth_order_lpf u_filter (
+        .clk(clk_50m),
+        .reset(!rst_n),
+        .data_in(formatted_audio),
+        .data_valid(mic_data_valid),
+        .data_out(filter_audio)
+    );
+
+    modulation amp_mod (
+        .clk(clk_50m),
+        .reset(!rst_n),
+        .data_in(formatted_audio),
+        .data_valid(mic_data_valid),
+        .data_out(mod_audio)
+    );
+	 
+	 
+	assign processed_audio = echo_audio;
+
 
     // ========================================================
-    // 4. I2S TRANSMITTER INSTANTIATION
+    // 5. I2S TRANSMITTER INSTANTIATION
     // ========================================================
     i2s_tx i2s_out (
         .rst_n(rst_n),
         .bclk(bclk),
-        .audio_l(formatted_audio),  // Send DSP audio to Left Ear
-        .audio_r(formatted_audio),  // Send DSP audio to Right Ear
+        .audio_l(processed_audio),  // Send DSP audio to Left Ear
+        .audio_r(processed_audio),  // Send DSP audio to Right Ear
         .lrck(i2s_lrck),
         .sdata(i2s_din)
     );
