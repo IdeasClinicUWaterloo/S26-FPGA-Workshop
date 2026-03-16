@@ -1,70 +1,75 @@
 `timescale 1ns/1ps
 
-module tb_echo_cos;
+module tb_echo;
 
-    localparam SAMPLE_WIDTH = 16;
-    localparam NUM_ECHO_SAMPLES = 8;
+    localparam int SAMPLE_WIDTH     = 16;
+    localparam int DELAYED_SAMPLES = 8;    // small for easy simulation
+    localparam int NUM_SAMPLES      = 200;
 
     logic clk;
     logic reset;
-    logic signed [SAMPLE_WIDTH-1:0] sample;
-    logic sample_valid;
-    logic signed [SAMPLE_WIDTH-1:0] sample_out;
-
-    // real variables for cosine
-    real t;
-    real freq;
-    real sample_rate;
-    real value;
+    logic signed [SAMPLE_WIDTH-1:0] data_in;
+    logic data_valid;
+    logic signed [SAMPLE_WIDTH-1:0] data_out;
 
     integer i;
 
     echo #(
         .SAMPLE_WIDTH(SAMPLE_WIDTH),
-        .NUM_ECHO_SAMPLES(NUM_ECHO_SAMPLES)
+        .DELAYED_SAMPLES(DELAYED_SAMPLES)
     ) dut (
         .clk(clk),
         .reset(reset),
-        .sample(sample),
-        .sample_valid(sample_valid),
-        .sample_out(sample_out)
+        .data_in(data_in),
+        .data_valid(data_valid),
+        .data_out(data_out)
     );
 
-    // clock
-    initial clk = 0;
+    // clock: 100 MHz
+    initial clk = 1'b0;
     always #5 clk = ~clk;
 
     initial begin
-        reset = 1;
-        sample = 0;
-        sample_valid = 0;
+        // initialize signals
+        reset        = 1'b1;
+        data_in       = '0;
+        data_valid = 1'b0;
 
-        sample_rate = 48000.0;
-        freq = 1000.0;
+        // initialize DUT memory to zero for simulation clarity
+        for (i = 0; i < DELAYED_SAMPLES; i = i + 1) begin
+            dut.prev_samples[i] = '0;
+        end
+        dut.delayed_sample = '0;
 
-        repeat(3) @(posedge clk);
-        reset = 0;
-        sample_valid = 1;
+        // hold reset for a few cycles
+        repeat (3) @(posedge clk);
+        reset = 1'b0;
+        data_valid = 1'b1;
 
-        // test with two impulses
-        for(i = 0; i < 200; i++) begin
+        // stimulus: one impulse, then zeros
+        for (i = 0; i < NUM_SAMPLES; i = i + 1) begin
             @(posedge clk);
-            if(i == 0 || i == 100) sample = 10_000;
-            else sample = 0;
+            if (i == 0 || i == 100)
+                data_in <= 16'sd10000;
+            else
+                data_in <= 16'sd0;
         end
 
-        sample_valid = 0;
-        
-        repeat(5) @(posedge clk);
+        // stop driving samples
+        @(posedge clk);
+        data_valid <= 1'b0;
+        data_in       <= 16'sd0;
+
+        repeat (5) @(posedge clk);
         $finish;
     end
 
-    // print input and output
+    // monitor
     always @(posedge clk) begin
-        if(sample_valid) begin
-            $display("in=%0d, out=%0d", sample, sample_out);
+        if (data_valid) begin
+            $display("in=%0d,out=%0d",
+                     data_in, data_out);
         end
     end
 
 endmodule
-

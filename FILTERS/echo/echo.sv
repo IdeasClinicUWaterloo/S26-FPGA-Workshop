@@ -1,51 +1,32 @@
 module echo #(
     parameter SAMPLE_WIDTH = 16,
-    parameter NUM_ECHO_SAMPLES = 12000
+    parameter DELAYED_SAMPLES = 4500
 ) (
-    input logic clk,
-    input logic reset,
-    input logic signed [SAMPLE_WIDTH-1:0] sample,
-    input logic sample_valid,
-    output logic signed [SAMPLE_WIDTH-1:0] sample_out
+    input  logic clk,
+    input  logic reset, // active-high reset
+    input  logic signed [SAMPLE_WIDTH-1:0] data_in,
+    input  logic data_valid,
+    output logic signed [SAMPLE_WIDTH-1:0] data_out
 );
 
-  logic [$clog2(NUM_ECHO_SAMPLES)-1:0] count;
+    logic [$clog2(DELAYED_SAMPLES)-1:0] index;
 
-  // delay memory
-  logic signed [SAMPLE_WIDTH-1:0] arr[0:NUM_ECHO_SAMPLES-1];
+    // array of previous samples
+    logic signed [SAMPLE_WIDTH-1:0] prev_samples [0:DELAYED_SAMPLES-1];
+    logic signed [SAMPLE_WIDTH-1:0] delayed_sample;
 
-  // delayed sample
-  logic signed [SAMPLE_WIDTH-1:0] delayed_sample;
+    always_ff @(posedge clk) begin
+        if (reset) begin
+            index <= 0;
+            data_out <= 0;
+        end else if (data_valid) begin
+            delayed_sample <= prev_samples[index];
+            data_out <= data_in + (delayed_sample >>> 1);
 
-  // mixed signal
-  logic signed [SAMPLE_WIDTH:0] mixed;
+            prev_samples[index] <= data_in + (delayed_sample >>> 1);
 
-  integer i;
-
-  always_ff @(posedge clk or posedge reset) begin
-    if (reset) begin
-      count          <= 0;
-      delayed_sample <= 0;
-      mixed          <= 0;
-      sample_out     <= 0;
-
-      for (i = 0; i < NUM_ECHO_SAMPLES; i = i + 1) arr[i] <= 0;
-
-    end else begin
-      if (sample_valid) begin
-        delayed_sample <= arr[count];
-
-        // current + half delayed
-        mixed <= sample + (delayed_sample >>> 1);
-        sample_out <= mixed[SAMPLE_WIDTH-1:0];
-
-        // store mixed for repeated echoes
-        arr[count] <= mixed[SAMPLE_WIDTH-1:0];
-
-        if (count == NUM_ECHO_SAMPLES - 1) count <= 0;
-        else count <= count + 1;
-      end
+            if (index == DELAYED_SAMPLES - 1) index <= 0;
+            else index <= index + 1;
+        end
     end
-  end
-
 endmodule

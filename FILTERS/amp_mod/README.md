@@ -2,6 +2,7 @@
 
 ## Note:
 - the testbench and visualize.py is still WIP
+- Would be good to find a way to remove background noise (sounds like static and a periodic popping sound)
 
 ## Vocal Effect
  Audio signals that sound like they're pulsating.

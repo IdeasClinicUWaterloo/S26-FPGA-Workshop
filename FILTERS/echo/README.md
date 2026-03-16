@@ -1,5 +1,9 @@
 # Echo
 
+
+## Note 
+- Would be good to find a way to remove background noise (sounds like rain)
+
 ## Vocal Effect
 An echo effect makes the audio sound like you're in a cave or long hallway.
 

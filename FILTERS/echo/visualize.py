@@ -22,18 +22,21 @@ if len(ins) == 0:
 
 samples = list(range(len(ins)))
 
-plt.figure(figsize=(10, 4))
-plt.plot(samples, ins)
-plt.title("Input Signal")
-plt.xlabel("Sample")
-plt.ylabel("Amplitude")
-plt.grid(True)
+# Create one window with two plots
+fig, axs = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
 
-plt.figure(figsize=(10, 4))
-plt.plot(samples, outs)
-plt.title("Output Signal")
-plt.xlabel("Sample")
-plt.ylabel("Amplitude")
-plt.grid(True)
+# Input signal
+axs[0].plot(samples, ins)
+axs[0].set_title("Input Signal")
+axs[0].set_ylabel("Amplitude")
+axs[0].grid(True)
 
+# Output signal
+axs[1].plot(samples, outs, color="orange")
+axs[1].set_title("Output Signal")
+axs[1].set_xlabel("Sample")
+axs[1].set_ylabel("Amplitude")
+axs[1].grid(True)
+
+plt.tight_layout()
 plt.show()
