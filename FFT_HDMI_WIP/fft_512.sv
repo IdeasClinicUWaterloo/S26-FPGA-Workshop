@@ -54,7 +54,11 @@ module fft_512 #(
 
   // butterfly
   logic signed [SAMPLE_SIZE-1:0] tr, ti, hi_r, lo_r, hi_i, lo_i; // real and imaginary parts
-  logic signed [SAMPLE_SIZE+16-1:0] cos_r, sin_r, cos_i, sin_i;
+  // Hint Quartus to use DSP blocks for these multipliers (saves LABs).
+  (* use_dsp = "yes", multstyle = "dsp" *) logic signed [SAMPLE_SIZE+16-1:0] cos_r;
+  (* use_dsp = "yes", multstyle = "dsp" *) logic signed [SAMPLE_SIZE+16-1:0] cos_i;
+  (* use_dsp = "yes", multstyle = "dsp" *) logic signed [SAMPLE_SIZE+16-1:0] sin_r;
+  (* use_dsp = "yes", multstyle = "dsp" *) logic signed [SAMPLE_SIZE+16-1:0] sin_i;
   logic signed [SAMPLE_SIZE+17-1:0] sum_r, diff_i;
   logic signed [15:0] cos, sin;
 
@@ -237,7 +241,10 @@ module fft_512 #(
     .q(sin)
   );
 
-  fft_ram ram (
+  fft_ram #(
+      .ADDR_WIDTH(log2N),
+      .DATA_WIDTH(SAMPLE_SIZE*2)
+  ) ram (
       .clock    (clk),
       .address_a(addr_hi),
       .data_a   (data_hi),

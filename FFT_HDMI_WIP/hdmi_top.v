@@ -34,8 +34,8 @@ module hdmi_top (
     wire [11:0] hcount, vcount;
     wire        hsync, vsync, de, frame_start;
 	 
-	 wire [8:0] bin_idx;
-	 wire [15:0] bin_read;
+	 wire [8:0]  bin_idx;
+	 wire [23:0] bin_read;
 	 
     video_timing timing_inst (
         .clk         (clk_pixel),
@@ -56,7 +56,7 @@ module hdmi_top (
         .de       (de),
         .rgb      (hdmi_tx_d), // output rgb pixels
 		  .bin_idx  (bin_idx),
-		  .bin_magnitude_raw (bin_read >> 6) // scale input data
+		  .bin_magnitude_raw (bin_read >> 6) // scale input data (tune as needed)
     );
 
     // connect sync/data signals directly to hdmi outputs

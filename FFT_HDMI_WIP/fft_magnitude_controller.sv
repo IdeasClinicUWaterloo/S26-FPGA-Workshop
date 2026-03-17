@@ -2,7 +2,9 @@ module fft_mag_controller #(
     parameter int N = 512,
 	 parameter int ADDR_WIDTH = 9, // log2(512) = 9
     parameter int FFT_WIDTH  = 24,
-    parameter int MAG_WIDTH  = 24
+    parameter int MAG_WIDTH  = 24,
+    // Internal FFT datapath width (reduce to save LABs)
+    parameter int FFT_DSP_WIDTH = 16
 ) (
     input  logic                 			clk,
     input  logic                 			reset,
@@ -15,17 +17,23 @@ module fft_mag_controller #(
     output logic [MAG_WIDTH-1:0] 			magnitude_data
 );
 
-  logic [ADDR_WIDTH-1:0]  fft_index;
-  logic signed [FFT_WIDTH-1:0] fftr, ffti;
+  logic [ADDR_WIDTH-1:0]       fft_index;
+  logic signed [FFT_DSP_WIDTH-1:0] fftr, ffti;
   logic                   fft_valid;
 
-  logic [MAG_WIDTH-1:0] magnitude;
+  logic [FFT_DSP_WIDTH-1:0] magnitude_narrow;
+  logic [MAG_WIDTH-1:0]     magnitude;
 
   // instantiate the FFT
-  fft_512 u_fft (
+  fft_512 #(
+      .N(N),
+      .log2N(ADDR_WIDTH),
+      .SAMPLE_SIZE(FFT_DSP_WIDTH)
+  ) u_fft (
       .clk      (clk),
       .reset    (reset),
-      .in_sample(sample),
+      // Truncate by keeping MSBs to preserve sign + scale
+      .in_sample(sample[FFT_WIDTH-1 -: FFT_DSP_WIDTH]),
       .in_valid (sample_valid),
       .out_index(fft_index),
       .out_fftr (fftr),
@@ -34,11 +42,19 @@ module fft_mag_controller #(
   );
 
   // magnitude logic
-  magnitude_approx u_mag (
+  magnitude_approx #(
+      .WIDTH(FFT_DSP_WIDTH)
+  ) u_mag (
       .i_data    (fftr),
       .q_data    (ffti),
-      .magnitude (magnitude)
+      .magnitude (magnitude_narrow)
   );
+
+  // Zero-extend magnitude into the stored width
+  always_comb begin
+    magnitude = {MAG_WIDTH{1'b0}};
+    magnitude[FFT_DSP_WIDTH-1:0] = magnitude_narrow;
+  end
 
   // store magnitude in RAM
   mag_ram u_ram (
