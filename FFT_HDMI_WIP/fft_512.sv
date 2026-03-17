@@ -218,8 +218,15 @@ module fft_512 #(
 
         DONE: begin
           out_valid <= 0;
+			 // loop back for continuous FFT frames
 			 count <= 0;
-          //state <= LOAD_SAMPLES; // loop back
+          stage <= 1;
+          j <= 0;
+          Hindex <= 0;
+          hi_index <= 0;
+          lo_index <= 1;
+          twiddle_index <= 0;
+          state <= LOAD_SAMPLES;
         end
 
         default: begin

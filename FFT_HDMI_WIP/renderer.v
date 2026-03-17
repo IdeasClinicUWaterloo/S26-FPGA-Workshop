@@ -19,15 +19,21 @@ module renderer #(
   // Plot layout
   localparam integer PLOT_LEFT   = 64;
   localparam integer PLOT_TOP    = 32;
-  localparam integer PLOT_WIDTH  = 1024; // 2 pixels per bin * 512 bins
+  localparam integer PLOT_WIDTH  = 1024; // fixed plot width
   localparam integer PLOT_RIGHT  = PLOT_LEFT + PLOT_WIDTH - 1;
   localparam integer PLOT_BOTTOM = V_ACTIVE - 48;
   localparam integer PLOT_HEIGHT = PLOT_BOTTOM - PLOT_TOP + 1;
 
-  // Cheap X->bin mapping (no mult/div): 2 pixels per bin inside plot, clamp outside.
+  // Display only the low-frequency region (0..~6kHz) by stretching the lowest bins
+  // across the full plot width. With Fs≈48kHz and N=512, bin width ≈ 93.75Hz,
+  // so bins 0..63 cover ≈ 0..6kHz.
+  localparam integer DISPLAY_BINS = 64;     // bins 0..63
+  localparam integer BIN_PIXELS   = 16;     // 1024px / 64 bins = 16px per bin
+
+  // Cheap X->bin mapping (no mult/div): 16 pixels per bin inside plot.
   wire in_plot_x = (hcount >= PLOT_LEFT) && (hcount <= PLOT_RIGHT);
   wire [11:0] x_plot = hcount - PLOT_LEFT;
-  wire [8:0]  bin_from_x = x_plot[9:1]; // 0..511 (within 1024px plot)
+  wire [8:0]  bin_from_x = {3'b000, x_plot[9:4]}; // 0..63 (16px per bin)
   assign bin_idx = in_plot_x ? bin_from_x : 9'd0;
 
   // delay vcount and de by 1 cycle to match the RAM latency
@@ -114,6 +120,30 @@ module renderer #(
     end
   endfunction
 
+  function is_4digit_pixel;
+    input [11:0] px;
+    input [11:0] py;
+    input [11:0] x0;
+    input [11:0] y0;
+    input [13:0] value; // 0..9999
+    reg [3:0] thousands;
+    reg [3:0] hundreds;
+    reg [3:0] tens;
+    reg [3:0] ones;
+    begin
+      thousands = (value / 1000) % 10;
+      hundreds  = (value / 100)  % 10;
+      tens      = (value / 10)   % 10;
+      ones      = value % 10;
+
+      is_4digit_pixel =
+        is_digit_pixel(px, py, x0 + 12'd0,  y0, thousands) ||
+        is_digit_pixel(px, py, x0 + 12'd6,  y0, hundreds)  ||
+        is_digit_pixel(px, py, x0 + 12'd12, y0, tens)      ||
+        is_digit_pixel(px, py, x0 + 12'd18, y0, ones);
+    end
+  endfunction
+
   always @(posedge clk) begin
     if (!de_pipe) begin
       rgb <= BLACK;
@@ -146,13 +176,16 @@ module renderer #(
       end
 
       // X axis labels (bin numbers)
-      // 0, 128, 256, 384, 512 (rightmost label is approximate end-of-axis)
+      // Frequency labels in Hz for the displayed 0..6kHz region.
       if (vcount_pipe >= PLOT_BOTTOM + 12'd6 && vcount_pipe < PLOT_BOTTOM + 12'd13) begin
-        if (is_3digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd0,   PLOT_BOTTOM + 12'd6, 10'd0))   rgb <= 24'hFFFFFF;
-        if (is_3digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd256, PLOT_BOTTOM + 12'd6, 10'd128)) rgb <= 24'hFFFFFF;
-        if (is_3digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd512, PLOT_BOTTOM + 12'd6, 10'd256)) rgb <= 24'hFFFFFF;
-        if (is_3digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd768, PLOT_BOTTOM + 12'd6, 10'd384)) rgb <= 24'hFFFFFF;
-        if (is_3digit_pixel(hcount_pipe, vcount_pipe, PLOT_RIGHT - 12'd20, PLOT_BOTTOM + 12'd6, 10'd512)) rgb <= 24'hFFFFFF;
+        // Tick X positions for 0..6kHz across 1024px: 0, 170, 341, 512, 683, 853, 1023
+        if (is_3digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd0,    PLOT_BOTTOM + 12'd6, 10'd0))    rgb <= 24'hFFFFFF;
+        if (is_4digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd160,  PLOT_BOTTOM + 12'd6, 14'd1000)) rgb <= 24'hFFFFFF;
+        if (is_4digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd331,  PLOT_BOTTOM + 12'd6, 14'd2000)) rgb <= 24'hFFFFFF;
+        if (is_4digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd502,  PLOT_BOTTOM + 12'd6, 14'd3000)) rgb <= 24'hFFFFFF;
+        if (is_4digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd673,  PLOT_BOTTOM + 12'd6, 14'd4000)) rgb <= 24'hFFFFFF;
+        if (is_4digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd843,  PLOT_BOTTOM + 12'd6, 14'd5000)) rgb <= 24'hFFFFFF;
+        if (is_4digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd994,  PLOT_BOTTOM + 12'd6, 14'd6000)) rgb <= 24'hFFFFFF;
       end
 
       // Y axis labels (0, 50, 100 percent)

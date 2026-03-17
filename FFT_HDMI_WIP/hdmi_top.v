@@ -8,6 +8,17 @@ module hdmi_top (
     input  wire        clk_50,        // 50 mhz main board clock
     input  wire        cpu_reset_n,   // pushbutton reset, active-low
 
+    // --- ADC Pins (LTC2308) for mic input ---
+    output wire        adc_convst,
+    output wire        adc_sck,
+    output wire        adc_sdi,
+    input  wire        adc_sdo,
+
+    // --- I2S DAC Pins ---
+    output wire        i2s_bclk,
+    output wire        i2s_lrck,
+    output wire        i2s_din,
+
     output wire [23:0] hdmi_tx_d,     // rgb pixel data
     output wire        hdmi_tx_de,    // data enable
     output wire        hdmi_tx_hs,    // horizontal sync
@@ -56,7 +67,7 @@ module hdmi_top (
         .de       (de),
         .rgb      (hdmi_tx_d), // output rgb pixels
 		  .bin_idx  (bin_idx),
-		  .bin_magnitude_raw (bin_read >> 6) // scale input data (tune as needed)
+		  .bin_magnitude_raw (bin_read >> 6) // taller bars for live audio (tune as needed)
     );
 
     // connect sync/data signals directly to hdmi outputs
@@ -86,32 +97,83 @@ module hdmi_top (
 
 	 );
 	 
-	 // send samples to fft
-	 reg [8:0] sample_addr_reg;
-	 wire [8:0]  sample_addr;
-	 wire signed [15:0] cos_sample_raw;
-	 wire signed [23:0] fft_sample;
-	 reg sample_valid;
-	 
-	 always @(posedge clk_50 or posedge reset) begin
-	    if(reset) begin
-			sample_addr_reg <= 9'd0;
-			sample_valid    <= 1'b0;
-		 end else if (sample_addr_reg < 512) begin
-		 	  sample_addr_reg <= sample_addr_reg + 9'd1;
-			  sample_valid <= 1'b1;
-		 end else begin
-			  sample_valid <= 1'b0;
-		 end
+	 // ------------------------------------------------------------------
+	 // Live microphone samples via LTC2308 ADC (clk_50 domain)
+	 // ------------------------------------------------------------------
+	 wire [11:0] raw_mic_data;
+	 wire        mic_data_valid;
+	 reg  signed [23:0] fft_sample;
+	 reg         sample_valid;
+
+	 ltc2308_reader adc_inst (
+		.clk          (clk_50),
+		.rst_n        (cpu_reset_n),
+		.measure_start(1'b1),
+		.channel      (3'b000),
+		.adc_convst   (adc_convst),
+		.adc_sck      (adc_sck),
+		.adc_sdi      (adc_sdi),
+		.adc_sdo      (adc_sdo),
+		.data_out     (raw_mic_data),
+		.data_valid   (mic_data_valid)
+	 );
+
+	 // Convert ADC unsigned 12-bit to signed (remove DC offset, apply gain)
+	 // Gain + scaling tuned so signal lives in MSBs of 24-bit sample.
+	 wire signed [15:0] formatted_audio16 =
+		($signed({4'b0000, raw_mic_data}) - 16'sd1650) <<< 5;
+	 wire signed [23:0] formatted_audio24 =
+		{{8{formatted_audio16[15]}}, formatted_audio16};
+
+	 // ========================================================
+	 // I2S DAC output (runs in parallel with FFT+HDMI)
+	 // 50MHz -> ~3.125MHz BCLK (divide by 16)
+	 // ========================================================
+	 reg [3:0] clk_div;
+	 wire bclk = clk_div[3];
+	 assign i2s_bclk = bclk;
+
+	 always @(posedge clk_50 or negedge cpu_reset_n) begin
+		if (!cpu_reset_n) begin
+			clk_div <= 4'd0;
+		end else begin
+			clk_div <= clk_div + 4'd1;
+		end
 	 end
 
-	 assign sample_addr = sample_addr_reg;
-	 assign fft_sample = {{8{cos_sample_raw[15]}}, cos_sample_raw};
-	 
-	 //tmp digital samples of cosine wave
-	 cos_samples_rom cos(
-		.clock (clk_50),
-		.address(sample_addr),
-		.q(cos_sample_raw)
+	 i2s_tx i2s_out (
+		.rst_n (cpu_reset_n),
+		.bclk  (bclk),
+		.audio_l(formatted_audio16),
+		.audio_r(formatted_audio16),
+		.lrck  (i2s_lrck),
+		.sdata (i2s_din)
 	 );
+
+	 // Sample rate control: emit one FFT sample at ~48 kHz
+	 localparam integer AUDIO_DIV = 1042; // 50e6 / 1042 ≈ 47.98 kHz
+	 reg [15:0] audio_cnt;
+	 reg signed [23:0] sample_latched;
+
+	 always @(posedge clk_50 or posedge reset) begin
+	    if (reset) begin
+			audio_cnt      <= 16'd0;
+			sample_valid   <= 1'b0;
+			sample_latched <= 24'sd0;
+			fft_sample     <= 24'sd0;
+		 end else begin
+			// latch latest ADC conversion whenever it arrives
+			if (mic_data_valid) sample_latched <= formatted_audio24;
+
+			// generate audio tick
+			if (audio_cnt == AUDIO_DIV-1) begin
+				audio_cnt    <= 16'd0;
+				fft_sample   <= sample_latched;
+				sample_valid <= 1'b1;
+			end else begin
+				audio_cnt    <= audio_cnt + 16'd1;
+				sample_valid <= 1'b0;
+			end
+		 end
+	 end
 endmodule
