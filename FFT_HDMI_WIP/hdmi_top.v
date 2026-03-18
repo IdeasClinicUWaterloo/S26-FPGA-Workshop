@@ -67,7 +67,8 @@ module hdmi_top (
         .de       (de),
         .rgb      (hdmi_tx_d), // output rgb pixels
 		  .bin_idx  (bin_idx),
-		  .bin_magnitude_raw (bin_read >> 6) // taller bars for live audio (tune as needed)
+		  // ~1/3 of previous height (cheap shift-add): 3/256 * bin_read
+		  .bin_magnitude_raw ((bin_read >> 7) + (bin_read >> 8))
     );
 
     // connect sync/data signals directly to hdmi outputs
@@ -122,8 +123,9 @@ module hdmi_top (
 	 // Gain + scaling tuned so signal lives in MSBs of 24-bit sample.
 	 wire signed [15:0] formatted_audio16 =
 		($signed({4'b0000, raw_mic_data}) - 16'sd1650) <<< 5;
+	 // Shift into MSBs so FFT controller (which takes sample[23 -: 16]) sees the signal.
 	 wire signed [23:0] formatted_audio24 =
-		{{8{formatted_audio16[15]}}, formatted_audio16};
+		({{8{formatted_audio16[15]}}, formatted_audio16}) <<< 8;
 
 	 // ========================================================
 	 // I2S DAC output (runs in parallel with FFT+HDMI)
@@ -150,8 +152,8 @@ module hdmi_top (
 		.sdata (i2s_din)
 	 );
 
-	 // Sample rate control: emit one FFT sample at ~48 kHz
-	 localparam integer AUDIO_DIV = 1042; // 50e6 / 1042 ≈ 47.98 kHz
+	 // Sample rate control: emit one FFT sample at ~24 kHz
+	 localparam integer AUDIO_DIV = 2083; // 50e6 / 2083 ≈ 24.0 kHz
 	 reg [15:0] audio_cnt;
 	 reg signed [23:0] sample_latched;
 

@@ -28,8 +28,8 @@ module mag_ram #(
 
   // Port A (write/readback in FFT clock domain)
   always @(posedge clock_a) begin
-    if (wren_a) mem[address_a] <= data_a;
     q_a <= mem[address_a];
+    if (wren_a) mem[address_a] <= data_a;
   end
 
   // Port B (read in pixel clock domain; write disabled by design)

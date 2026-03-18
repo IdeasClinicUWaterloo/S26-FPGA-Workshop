@@ -25,15 +25,15 @@ module renderer #(
   localparam integer PLOT_HEIGHT = PLOT_BOTTOM - PLOT_TOP + 1;
 
   // Display only the low-frequency region (0..~6kHz) by stretching the lowest bins
-  // across the full plot width. With Fs≈48kHz and N=512, bin width ≈ 93.75Hz,
-  // so bins 0..63 cover ≈ 0..6kHz.
-  localparam integer DISPLAY_BINS = 64;     // bins 0..63
-  localparam integer BIN_PIXELS   = 16;     // 1024px / 64 bins = 16px per bin
+  // across the full plot width. With Fs≈24kHz and N=512, bin width ≈ 46.875Hz,
+  // so bins 0..127 cover ≈ 0..6kHz (~128 bins).
+  localparam integer DISPLAY_BINS = 128;    // bins 0..127
+  localparam integer BIN_PIXELS   = 8;      // 1024px / 128 bins = 8px per bin
 
-  // Cheap X->bin mapping (no mult/div): 16 pixels per bin inside plot.
+  // Cheap X->bin mapping (no mult/div): 8 pixels per bin inside plot.
   wire in_plot_x = (hcount >= PLOT_LEFT) && (hcount <= PLOT_RIGHT);
   wire [11:0] x_plot = hcount - PLOT_LEFT;
-  wire [8:0]  bin_from_x = {3'b000, x_plot[9:4]}; // 0..63 (16px per bin)
+  wire [8:0]  bin_from_x = {2'b00, x_plot[9:3]};  // 0..127 (8px per bin)
   assign bin_idx = in_plot_x ? bin_from_x : 9'd0;
 
   // delay vcount and de by 1 cycle to match the RAM latency
@@ -45,6 +45,7 @@ module renderer #(
   reg [11:0] mag_clip;
   reg [11:0] bar_height;
   reg [11:0] y_plot;
+  reg [23:0] bar_color;
 
   always @(posedge clk) begin
     vcount_pipe <= vcount;
@@ -162,6 +163,15 @@ module renderer #(
         rgb <= 24'h808080; // X axis
       end
 
+      // Choose bar color (heatmap by magnitude/presence):
+      // purple -> blue -> green -> yellow -> orange -> red
+      if (bar_height < (PLOT_HEIGHT[11:0] >> 3))        bar_color <= 24'h8000FF; // purple
+      else if (bar_height < (PLOT_HEIGHT[11:0] >> 2))   bar_color <= 24'h0000FF; // blue
+      else if (bar_height < (PLOT_HEIGHT[11:0] >> 1))   bar_color <= 24'h00FF00; // green
+      else if (bar_height < (PLOT_HEIGHT[11:0] - (PLOT_HEIGHT[11:0] >> 2))) bar_color <= 24'hFFFF00; // yellow
+      else if (bar_height < (PLOT_HEIGHT[11:0] - (PLOT_HEIGHT[11:0] >> 3))) bar_color <= 24'hFF7F00; // orange
+      else                                        bar_color <= 24'hFF0000; // red
+
       // Grid lines (light)
       if (hcount_pipe >= PLOT_LEFT && hcount_pipe <= PLOT_RIGHT &&
           vcount_pipe >= PLOT_TOP  && vcount_pipe <= PLOT_BOTTOM) begin
@@ -172,7 +182,7 @@ module renderer #(
 
         // Bars (draw on top of grid)
         y_plot = PLOT_BOTTOM - vcount_pipe;
-        if (y_plot < bar_height) rgb <= 24'h00FF00;
+        if (y_plot < bar_height) rgb <= bar_color;
       end
 
       // X axis labels (bin numbers)

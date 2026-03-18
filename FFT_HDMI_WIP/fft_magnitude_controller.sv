@@ -23,6 +23,8 @@ module fft_mag_controller #(
 
   logic [FFT_DSP_WIDTH-1:0] magnitude_narrow;
   logic [MAG_WIDTH-1:0]     magnitude;
+  logic [MAG_WIDTH-1:0]     prev_magnitude;
+  logic [MAG_WIDTH-1:0]     magnitude_to_store;
 
   // instantiate the FFT
   fft_512 #(
@@ -56,6 +58,12 @@ module fft_mag_controller #(
     magnitude[FFT_DSP_WIDTH-1:0] = magnitude_narrow;
   end
 
+  // One-frame smoothing: store average of previous and current magnitudes.
+  // This reduces flicker without long-term smearing.
+  always_comb begin
+    magnitude_to_store = (prev_magnitude + magnitude) >> 1;
+  end
+
   // store magnitude in RAM
   mag_ram u_ram (
       .clock_a    (clk),
@@ -63,9 +71,9 @@ module fft_mag_controller #(
 
       // write only on Port A
       .address_a(fft_index),
-      .data_a   (magnitude),
+      .data_a   (magnitude_to_store),
       .wren_a   (fft_valid),
-      .q_a      (),
+      .q_a      (prev_magnitude),
 
       // read only on Port B
       .address_b(magnitude_index),
