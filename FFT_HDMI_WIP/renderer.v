@@ -23,6 +23,14 @@ module renderer #(
   localparam integer PLOT_RIGHT  = PLOT_LEFT + PLOT_WIDTH - 1;
   localparam integer PLOT_BOTTOM = V_ACTIVE - 48;
   localparam integer PLOT_HEIGHT = PLOT_BOTTOM - PLOT_TOP + 1;
+  // Cap bars to ~2/3 plot height so they are easier to see.
+  localparam integer BAR_MAX_HEIGHT = (2*PLOT_HEIGHT)/3;
+
+  // Bar coloring thresholds: split capped height into 5 equal bands.
+  localparam integer T1 = BAR_MAX_HEIGHT/5; // lowest band upper bound
+  localparam integer T2 = (2*BAR_MAX_HEIGHT)/5;
+  localparam integer T3 = (3*BAR_MAX_HEIGHT)/5;
+  localparam integer T4 = (4*BAR_MAX_HEIGHT)/5; // highest band lower bound
 
   // Display only the low-frequency region (0..~6kHz) by stretching the lowest bins
   // across the full plot width. With Fs≈24kHz and N=512, bin width ≈ 46.875Hz,
@@ -30,10 +38,11 @@ module renderer #(
   localparam integer DISPLAY_BINS = 128;    // bins 0..127
   localparam integer BIN_PIXELS   = 8;      // 1024px / 128 bins = 8px per bin
 
-  // Cheap X->bin mapping (no mult/div): 8 pixels per bin inside plot.
+  // Cheap X->bin mapping (0..127) for the displayed low-frequency region.
+  // 8px per bin across the 1024px plot: bin = x_plot[9:3]
   wire in_plot_x = (hcount >= PLOT_LEFT) && (hcount <= PLOT_RIGHT);
   wire [11:0] x_plot = hcount - PLOT_LEFT;
-  wire [8:0]  bin_from_x = {2'b00, x_plot[9:3]};  // 0..127 (8px per bin)
+  wire [8:0]  bin_from_x = {2'b00, x_plot[9:3]}; // 0..127
   assign bin_idx = in_plot_x ? bin_from_x : 9'd0;
 
   // delay vcount and de by 1 cycle to match the RAM latency
@@ -145,6 +154,8 @@ module renderer #(
     end
   endfunction
 
+  // (log-axis label code removed to save resources)
+
   always @(posedge clk) begin
     if (!de_pipe) begin
       rgb <= BLACK;
@@ -152,6 +163,8 @@ module renderer #(
       // Clip magnitude to plot height (pixels)
       mag_clip = (bin_magnitude > PLOT_HEIGHT) ? PLOT_HEIGHT[11:0] : bin_magnitude[11:0];
       bar_height = mag_clip;
+      // Cap bar height so bars don't dominate the whole plot.
+      if (bar_height > BAR_MAX_HEIGHT[11:0]) bar_height = BAR_MAX_HEIGHT[11:0];
 
       // Default background
       rgb <= BLACK;
@@ -163,14 +176,17 @@ module renderer #(
         rgb <= 24'h808080; // X axis
       end
 
-      // Choose bar color (heatmap by magnitude/presence):
-      // purple -> blue -> green -> yellow -> orange -> red
-      if (bar_height < (PLOT_HEIGHT[11:0] >> 3))        bar_color <= 24'h8000FF; // purple
-      else if (bar_height < (PLOT_HEIGHT[11:0] >> 2))   bar_color <= 24'h0000FF; // blue
-      else if (bar_height < (PLOT_HEIGHT[11:0] >> 1))   bar_color <= 24'h00FF00; // green
-      else if (bar_height < (PLOT_HEIGHT[11:0] - (PLOT_HEIGHT[11:0] >> 2))) bar_color <= 24'hFFFF00; // yellow
-      else if (bar_height < (PLOT_HEIGHT[11:0] - (PLOT_HEIGHT[11:0] >> 3))) bar_color <= 24'hFF7F00; // orange
-      else                                        bar_color <= 24'hFF0000; // red
+      // Choose bar color ladder based on bar_height bands.
+      // highest     -> (255,0,0)
+      // medium-high-> (255,165,0)
+      // middle      -> (255,255,0)
+      // medium-low -> (165,255,0)
+      // lowest      -> (0,255,0)
+      if (bar_height >= T4)          bar_color = 24'hFF0000; // red
+      else if (bar_height >= T3)     bar_color = 24'hFFA500; // orange
+      else if (bar_height >= T2)     bar_color = 24'hFFFF00; // yellow
+      else if (bar_height >= T1)     bar_color = 24'hA5FF00; // 165,255,0
+      else                            bar_color = 24'h00FF00; // green
 
       // Grid lines (light)
       if (hcount_pipe >= PLOT_LEFT && hcount_pipe <= PLOT_RIGHT &&
@@ -185,24 +201,12 @@ module renderer #(
         if (y_plot < bar_height) rgb <= bar_color;
       end
 
-      // X axis labels (bin numbers)
-      // Frequency labels in Hz for the displayed 0..6kHz region.
+      // X axis labels (display 0..6000 range). Limited tick set to save resources.
       if (vcount_pipe >= PLOT_BOTTOM + 12'd6 && vcount_pipe < PLOT_BOTTOM + 12'd13) begin
-        // Tick X positions for 0..6kHz across 1024px: 0, 170, 341, 512, 683, 853, 1023
-        if (is_3digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd0,    PLOT_BOTTOM + 12'd6, 10'd0))    rgb <= 24'hFFFFFF;
-        if (is_4digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd160,  PLOT_BOTTOM + 12'd6, 14'd1000)) rgb <= 24'hFFFFFF;
-        if (is_4digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd331,  PLOT_BOTTOM + 12'd6, 14'd2000)) rgb <= 24'hFFFFFF;
-        if (is_4digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd502,  PLOT_BOTTOM + 12'd6, 14'd3000)) rgb <= 24'hFFFFFF;
-        if (is_4digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd673,  PLOT_BOTTOM + 12'd6, 14'd4000)) rgb <= 24'hFFFFFF;
-        if (is_4digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd843,  PLOT_BOTTOM + 12'd6, 14'd5000)) rgb <= 24'hFFFFFF;
-        if (is_4digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd994,  PLOT_BOTTOM + 12'd6, 14'd6000)) rgb <= 24'hFFFFFF;
-      end
-
-      // Y axis labels (0, 50, 100 percent)
-      if (hcount_pipe < PLOT_LEFT-12'd6 && hcount_pipe >= 12'd6) begin
-        if (is_3digit_pixel(hcount_pipe, vcount_pipe, 12'd6, PLOT_BOTTOM - 12'd7, 10'd0))   rgb <= 24'hFFFFFF;
-        if (is_3digit_pixel(hcount_pipe, vcount_pipe, 12'd6, PLOT_TOP + (PLOT_HEIGHT/2) - 12'd3, 10'd50))  rgb <= 24'hFFFFFF;
-        if (is_3digit_pixel(hcount_pipe, vcount_pipe, 12'd6, PLOT_TOP - 12'd3, 10'd100)) rgb <= 24'hFFFFFF;
+        if (is_3digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd0,   PLOT_BOTTOM + 12'd6, 10'd0)) rgb <= 24'hFFFFFF;
+        if (is_4digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd331, PLOT_BOTTOM + 12'd6, 14'd2000)) rgb <= 24'hFFFFFF;
+        if (is_4digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd673, PLOT_BOTTOM + 12'd6, 14'd4000)) rgb <= 24'hFFFFFF;
+        if (is_4digit_pixel(hcount_pipe, vcount_pipe, PLOT_LEFT + 12'd994, PLOT_BOTTOM + 12'd6, 14'd6000)) rgb <= 24'hFFFFFF;
       end
 	 end
   end

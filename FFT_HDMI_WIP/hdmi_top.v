@@ -7,6 +7,7 @@
 module hdmi_top (
     input  wire        clk_50,        // 50 mhz main board clock
     input  wire        cpu_reset_n,   // pushbutton reset, active-low
+    input  wire        key1_n,        // pushbutton KEY1, active-low (debounced)
 
     // --- ADC Pins (LTC2308) for mic input ---
     output wire        adc_convst,
@@ -68,7 +69,8 @@ module hdmi_top (
         .rgb      (hdmi_tx_d), // output rgb pixels
 		  .bin_idx  (bin_idx),
 		  // ~1/3 of previous height (cheap shift-add): 3/256 * bin_read
-		  .bin_magnitude_raw ((bin_read >> 7) + (bin_read >> 8))
+		  // Retuned for 512-point FFT so bars reach multiple color bands.
+		  .bin_magnitude_raw ((bin_read >> 6) + (bin_read >> 7))
     );
 
     // connect sync/data signals directly to hdmi outputs
@@ -89,6 +91,7 @@ module hdmi_top (
 		.clk(clk_50),
       .reset(~pll_locked | reset),
 		.clk_pixel(clk_pixel),
+		.noise_capture_start(noise_capture_start),
 	 
 		.sample(fft_sample),
 		.sample_valid(sample_valid),
@@ -105,11 +108,12 @@ module hdmi_top (
 	 wire        mic_data_valid;
 	 reg  signed [23:0] fft_sample;
 	 reg         sample_valid;
+	 reg         adc_measure_start;
 
 	 ltc2308_reader adc_inst (
 		.clk          (clk_50),
 		.rst_n        (cpu_reset_n),
-		.measure_start(1'b1),
+		.measure_start(adc_measure_start),
 		.channel      (3'b000),
 		.adc_convst   (adc_convst),
 		.adc_sck      (adc_sck),
@@ -152,28 +156,51 @@ module hdmi_top (
 		.sdata (i2s_din)
 	 );
 
-	 // Sample rate control: emit one FFT sample at ~24 kHz
-	 localparam integer AUDIO_DIV = 2083; // 50e6 / 2083 ≈ 24.0 kHz
+	 // Sample rate control:
+	 // - Pulse `measure_start` at ~48.1 kHz to make ADC conversions deterministic
+	 // - Forward `mic_data_valid` to the FFT as the actual `sample_valid` strobe
+	 localparam integer AUDIO_DIV = 1039; // 50e6 / 1039 ≈ 48.1 kHz
 	 reg [15:0] audio_cnt;
-	 reg signed [23:0] sample_latched;
+
+	 // KEY1 noise profile capture trigger (generated as a 1-cycle pulse)
+	 reg        noise_capture_start;
+	 reg        key1_n_prev;
 
 	 always @(posedge clk_50 or posedge reset) begin
 	    if (reset) begin
-			audio_cnt      <= 16'd0;
-			sample_valid   <= 1'b0;
-			sample_latched <= 24'sd0;
-			fft_sample     <= 24'sd0;
+			audio_cnt        <= 16'd0;
+			adc_measure_start<= 1'b0;
+			sample_valid     <= 1'b0;
+			fft_sample       <= 24'sd0;
+			key1_n_prev      <= 1'b1;
+		 noise_capture_start <= 1'b0;
 		 end else begin
-			// latch latest ADC conversion whenever it arrives
-			if (mic_data_valid) sample_latched <= formatted_audio24;
+			// default: 1-cycle pulse
+			noise_capture_start <= 1'b0;
 
-			// generate audio tick
+			// Detect KEY1 press edge (active-low input)
+			key1_n_prev <= key1_n;
+			if (key1_n_prev && !key1_n) begin
+				noise_capture_start <= 1'b1;
+			end
+
+			// default: single-cycle conversion request pulse
+			adc_measure_start <= 1'b0;
+
+			// generate ADC conversion request
 			if (audio_cnt == AUDIO_DIV-1) begin
-				audio_cnt    <= 16'd0;
-				fft_sample   <= sample_latched;
+				audio_cnt         <= 16'd0;
+				adc_measure_start <= 1'b1;
+			end else begin
+				audio_cnt <= audio_cnt + 16'd1;
+			end
+
+			// when ADC reports a sample is ready, send it to FFT
+			if (mic_data_valid) begin
+				fft_sample <= formatted_audio24;
+
 				sample_valid <= 1'b1;
 			end else begin
-				audio_cnt    <= audio_cnt + 16'd1;
 				sample_valid <= 1'b0;
 			end
 		 end

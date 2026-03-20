@@ -98,14 +98,21 @@ set_location_assignment PIN_AA21 -to adc_sck
 set_location_assignment PIN_Y10 -to adc_sdi
 set_location_assignment PIN_W10 -to adc_sdo
 
-# I2S DAC pins moved to Arduino header IO8/IO9/IO10 (GPIO[8..10])
-set_location_assignment PIN_T22 -to i2s_bclk
-set_location_assignment PIN_T19 -to i2s_lrck
-set_location_assignment PIN_U19 -to i2s_din
+# I2S DAC pins moved to Arduino header based on board manual table:
+#   Arduino_IO8  -> PIN_U22 (GPIO DATA[11])
+#   Arduino_IO9  -> PIN_P8  (GPIO DATA[12])
+#   Arduino_IO10 -> PIN_R8  (GPIO DATA[13])
+set_location_assignment PIN_R8 -to i2s_bclk
+set_location_assignment PIN_P8 -to i2s_din
+set_location_assignment PIN_U22 -to i2s_lrck
 
 set_location_assignment PIN_P11 -to cpu_reset_n
 
+# KEY1 button (active-low)
+set_location_assignment PIN_P12 -to key1_n
+
 set_instance_assignment -name IO_STANDARD "1.2 V" -to cpu_reset_n
+set_instance_assignment -name IO_STANDARD "1.2 V" -to key1_n
 set_instance_assignment -name IO_STANDARD "1.2 V" -to adc_convst
 set_instance_assignment -name IO_STANDARD "1.2 V" -to adc_sck
 set_instance_assignment -name IO_STANDARD "1.2 V" -to adc_sdi
