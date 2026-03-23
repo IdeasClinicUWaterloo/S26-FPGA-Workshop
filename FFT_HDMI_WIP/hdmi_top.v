@@ -27,7 +27,11 @@ module hdmi_top (
     output wire        hdmi_tx_clk,   // pixel clock
 
     inout  wire        i2c_sda,       // i2c data for adv7513
-    output wire        i2c_scl        // i2c clock for adv7513
+    output wire        i2c_scl,        // i2c clock for adv7513
+	 
+	 // --- Filter ---
+	 inout wire sw0,
+	 output wire ledr0
 );
 
     // turn the active-low button into active-high reset
@@ -122,14 +126,66 @@ module hdmi_top (
 		.data_out     (raw_mic_data),
 		.data_valid   (mic_data_valid)
 	 );
+	 
+	 // ========================================================
+	 // AUDIO PROCESSING
+	 // 
+	 // ========================================================
+	 
+	 assign ledr0 = sw0;
 
 	 // Convert ADC unsigned 12-bit to signed (remove DC offset, apply gain)
 	 // Gain + scaling tuned so signal lives in MSBs of 24-bit sample.
 	 wire signed [15:0] formatted_audio16 =
 		($signed({4'b0000, raw_mic_data}) - 16'sd1650) <<< 5;
+	 reg signed [15:0] processed_audio16; 
+	 wire signed [15:0] filtered_audio16;
+	 reg processed_valid;
+	 wire filtered_valid;
+		
+	// LPF to remove the very high frequencies 
+	 fourth_order_filter #(
+		.STAGE1_B0(20'sd8321),
+		.STAGE1_B1(20'sd16643),
+		.STAGE1_B2(20'sd8321),
+		.STAGE1_A1(-20'sd382754),
+		.STAGE1_A2(20'sd155866),
+		.STAGE2_B0(20'sd262144),
+		.STAGE2_B1(-20'sd524288),
+		.STAGE2_B2(20'sd262144),
+		.STAGE2_A1(-20'sd510157),
+		.STAGE2_A2(20'sd248470)
+	 ) lpf(
+		 .clk(clk_50),
+		 .reset(!cpu_reset_n),
+		 
+		 .x(formatted_audio16),
+		 .x_valid(mic_data_valid),
+		 
+		 .y(filtered_audio16),
+		 .y_valid(filtered_valid)
+	);
+	
+	always @(posedge clk_50 or negedge cpu_reset_n) begin
+			 if (!cpu_reset_n) begin
+				  processed_audio16 <= 16'sd0;
+				  processed_valid   <= 1'b0;
+			 end else begin
+				  if (sw0) begin
+						processed_audio16 <= filtered_audio16;
+						processed_valid   <= filtered_valid;
+				  end else begin
+						processed_audio16 <= formatted_audio16;
+						processed_valid   <= mic_data_valid;
+				  end
+			 end
+		end
+
+	 
 	 // Shift into MSBs so FFT controller (which takes sample[23 -: 16]) sees the signal.
 	 wire signed [23:0] formatted_audio24 =
-		({{8{formatted_audio16[15]}}, formatted_audio16}) <<< 8;
+		({{8{processed_audio16[15]}}, processed_audio16}) <<< 8;
+	
 
 	 // ========================================================
 	 // I2S DAC output (runs in parallel with FFT+HDMI)
@@ -150,8 +206,8 @@ module hdmi_top (
 	 i2s_tx i2s_out (
 		.rst_n (cpu_reset_n),
 		.bclk  (bclk),
-		.audio_l(formatted_audio16),
-		.audio_r(formatted_audio16),
+		.audio_l(processed_audio16),
+		.audio_r(processed_audio16),
 		.lrck  (i2s_lrck),
 		.sdata (i2s_din)
 	 );
@@ -196,7 +252,7 @@ module hdmi_top (
 			end
 
 			// when ADC reports a sample is ready, send it to FFT
-			if (mic_data_valid) begin
+			if (processed_valid) begin
 				fft_sample <= formatted_audio24;
 
 				sample_valid <= 1'b1;

@@ -20,6 +20,7 @@ module fft_512 #(
     LOAD_SAMPLES,
     READ_ADDR,
     READ_WAIT,
+	 READ_WAIT2,
     READ,
     BUTTERFLY_MULT,
     BUTTERFLY_CALC,
@@ -27,6 +28,7 @@ module fft_512 #(
     UPDATE_INDICES,
     OUT_ADDR,
     OUT_WAIT,
+	 OUT_WAIT2,
     OUT_SHOW,
     DONE
   } state_t;
@@ -59,7 +61,6 @@ module fft_512 #(
   (* use_dsp = "yes", multstyle = "dsp" *) logic signed [SAMPLE_SIZE+16-1:0] cos_i;
   (* use_dsp = "yes", multstyle = "dsp" *) logic signed [SAMPLE_SIZE+16-1:0] sin_r;
   (* use_dsp = "yes", multstyle = "dsp" *) logic signed [SAMPLE_SIZE+16-1:0] sin_i;
-  logic signed [SAMPLE_SIZE+17-1:0] sum_r, diff_i;
   logic signed [15:0] cos, sin;
 
   // derived values from stage
@@ -80,7 +81,7 @@ module fft_512 #(
       addr_hi   <= 0; addr_lo   <= 0;
       data_hi   <= 0; data_lo   <= 0;
 
-      tr <=0; ti <= 0; diff_i <= 0; sum_r <= 0;
+      tr <=0; ti <= 0;
 
       out_index <= 0; out_valid <= 0;
       out_fftr <= 0; out_ffti <= 0;
@@ -116,8 +117,12 @@ module fft_512 #(
           state  <= READ_WAIT;
         end
 
-        // wait a cycle for address to load
+        // wait two cycles for address to load
         READ_WAIT: begin
+          state  <= READ_WAIT2;
+        end
+		  
+		  READ_WAIT2: begin
           state  <= READ;
         end
 
@@ -196,8 +201,13 @@ module fft_512 #(
           state   <= OUT_WAIT;
         end
 
-        // wait a cycle for the address to change
+        // wait two cycles for the address to change
         OUT_WAIT: begin
+          state <= OUT_WAIT2;
+        end
+		  
+		  // wait a cycle for the address to change
+        OUT_WAIT2: begin
           state <= OUT_SHOW;
         end
 
@@ -236,22 +246,15 @@ module fft_512 #(
     end
   end
 
-  cos_rom cos_lut (
-    .address(twiddle_index),
+  cos_512_lut cos_lut (
     .clock(clk),
-    .q(cos)
+    .address_a(twiddle_index),
+    .q_a(cos),
+	 .address_b(twiddle_index + 9'd384),
+	 .q_b(sin)
   );
 
-  sin_rom sin_lut (
-    .address(twiddle_index),
-    .clock(clk),
-    .q(sin)
-  );
-
-  fft_ram #(
-      .ADDR_WIDTH(log2N),
-      .DATA_WIDTH(SAMPLE_SIZE*2)
-  ) ram (
+  fft_512_ram ram (
       .clock    (clk),
       .address_a(addr_hi),
       .data_a   (data_hi),
