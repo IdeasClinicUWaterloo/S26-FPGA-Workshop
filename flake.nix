@@ -20,7 +20,6 @@
             python313Packages.numpy
             verilator
             zlib
-
             python313Packages.jupyterlab
           ];
         };
