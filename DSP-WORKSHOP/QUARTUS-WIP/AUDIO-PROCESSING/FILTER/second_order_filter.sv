@@ -1,7 +1,7 @@
 module second_order_filter #(
     parameter int WIDTH = 16,
 
-    // coefficients scaled by 2^18
+    // coefficients scaled by 2^15
     parameter logic signed [19:0] B0 = 20'sd0,
     parameter logic signed [19:0] B1 = 20'sd0,
     parameter logic signed [19:0] B2 = 20'sd0,

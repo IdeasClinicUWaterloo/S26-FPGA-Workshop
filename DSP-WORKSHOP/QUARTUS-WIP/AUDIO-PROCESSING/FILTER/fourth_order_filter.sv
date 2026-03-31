@@ -27,7 +27,7 @@ module fourth_order_filter #(
 );
 
   logic y_stage1_valid;
-  logic signed [SAMPLE_WIDTH-1:0] y_stage1;
+  logic signed [SAMPLE_WIDTH-1:0] y_stage1, y_stage2;
 
   second_order_filter #(
       .WIDTH(SAMPLE_WIDTH),
@@ -39,7 +39,7 @@ module fourth_order_filter #(
   ) stage1 (
       .clk(clk),
       .reset(reset),
-      .x(x),
+      .x(x >>> 1),
       .x_valid(x_valid),
       .y(y_stage1),
       .y_valid(y_stage1_valid)
@@ -55,9 +55,11 @@ module fourth_order_filter #(
   ) stage2 (
       .clk(clk),
       .reset(reset),
-      .x(y_stage1),
+      .x(y_stage1 >>> 1),
       .x_valid(y_stage1_valid),
-      .y(y),
+      .y(y_stage2),
       .y_valid(y_valid)
   );
+
+  assign y = y_stage2 <<< 1;
 endmodule

@@ -130,9 +130,9 @@ module top (
   // ========================================================
   // Audio processing
   // ========================================================
-  wire signed [15:0] formatted_audio16;
+  wire signed [15:0] formatted_audio16, highpass_audio16, lowpass_audio16, filtered_audio16;
   wire signed [23:0] formatted_audio24;
-  wire audio_ready;
+  wire audio_ready, highpass_ready, lowpass_ready, filter_ready;
 
   assign ledr0 = sw0;
 
@@ -143,10 +143,12 @@ module top (
       .raw_audio(raw_mic_data),
       .raw_valid(mic_data_valid),
       .out_audio16(formatted_audio16),
-      .out_audio24(formatted_audio24),
       .audio_ready(audio_ready)
   );
 
+  assign filtered_audio16 = formatted_audio16;
+  assign filter_ready = audio_ready;
+  assign formatted_audio24 = ({{8{filtered_audio16[15]}}, filtered_audio16}) <<< 8;
   // ========================================================
   // I2S DAC output (runs in parallel with FFT+HDMI)
   // 50MHz -> ~3.125MHz BCLK (divide by 16)
@@ -212,7 +214,7 @@ module top (
       end
 
       // when ADC reports a sample is ready, send it to FFT
-      if (audio_ready) begin
+      if (filter_ready) begin
         fft_sample   <= formatted_audio24;
 
         sample_valid <= 1'b1;

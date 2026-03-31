@@ -28,7 +28,7 @@ module magnitude_approx #(
 
         // Alpha-Beta Calculation: Max + (Min >> 2)
         // This approximates Alpha=1, Beta=0.25
-        magnitude = max_val + (min_val >> 2);
+        magnitude = (max_val + (min_val >> 2)) >>> 1; // halve result to reduce overflow
     end
 
 endmodule

@@ -4,7 +4,7 @@ JedecChain;
 	DefaultMfr(6E);
 
 	P ActionCode(Cfg)
-		Device PartName(5CGXFC5C6F27) Path("C:/Users/caitk/Downloads/UpdatedFPGAWorkshop/DSP-WORKSHOP/output_files/") File("DSP-WORKSHOP.sof") MfrSpec(OpMask(1));
+		Device PartName(5CGXFC5C6F27) Path("C:/Users/caitk/Downloads/UpdatedFPGAWorkshop/DSP-WORKSHOP/QUARTUS-WIP/output_files/") File("DSP-WORKSHOP.sof") MfrSpec(OpMask(1));
 
 ChainEnd;
 
