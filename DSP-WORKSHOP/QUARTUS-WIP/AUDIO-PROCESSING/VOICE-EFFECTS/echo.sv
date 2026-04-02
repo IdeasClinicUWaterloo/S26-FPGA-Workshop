@@ -9,7 +9,7 @@ module echo #(
     output logic signed [SAMPLE_WIDTH-1:0] data_out
 );
 
-    logic [$clog2(DELAYED_SAMPLES)-1:0] counter;
+    logic [$clog2(DELAYED_SAMPLES)-1:0] index;
 
     // array of previous samples
     logic signed [SAMPLE_WIDTH-1:0] prev_samples [0:DELAYED_SAMPLES-1];
@@ -17,16 +17,16 @@ module echo #(
 
     always_ff @(posedge clk) begin
         if (reset) begin
-            counter <= 0;
+            index <= 0;
             data_out <= 0;
         end else if (data_valid) begin
-            delayed_sample <= prev_samples[counter];
+            delayed_sample <= prev_samples[index];
             data_out <= data_in + (delayed_sample >>> 1);
 
-            prev_samples[counter] <= data_in + (delayed_sample >>> 1);
+            prev_samples[index] <= data_in + (delayed_sample >>> 1);
 
-            if (counter == DELAYED_SAMPLES - 1) counter <= 0;
-            else counter <= counter + 1;
+            if (index == DELAYED_SAMPLES - 1) index <= 0;
+            else index <= index + 1;
         end
     end
 endmodule

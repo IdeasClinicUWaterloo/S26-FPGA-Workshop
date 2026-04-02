@@ -38,33 +38,14 @@ module second_order_filter #(
   // ------------------------------------------------------------------
   // Sequential logic
   // ------------------------------------------------------------------
-  assign b0_mult = x * B0;
-  assign b1_mult = x1 * B1;
-  assign b2_mult = x2 * B2;
-  assign a1_mult = y1 * A1;
-  assign a2_mult = y2 * A2;
-
-  assign y_raw   = b0_mult + b1_mult + b2_mult - a1_mult - a2_mult;
-  assign y_next  = y_raw >>> 15;
 
   always_ff @(posedge clk or posedge reset) begin
     if (reset) begin
-      y_valid <= '0;
-      x1 <= '0;
-      x2 <= '0;
-      y1 <= '0;
-      y2 <= '0;
-      y <= '0;
-    end else if (x_valid) begin
-      y <= y_next;
-      x2 <= x1;
-      x1 <= x;
-      y2 <= y1;
-      y1 <= y_next;
 
-      y_valid <= 1'b1;
+    end else if (x_valid) begin
+
     end else begin
-      y_valid <= 1'b0;
+
     end
   end
 

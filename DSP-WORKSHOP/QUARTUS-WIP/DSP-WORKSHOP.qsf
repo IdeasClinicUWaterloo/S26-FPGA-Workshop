@@ -102,8 +102,26 @@ set_location_assignment PIN_P11 -to cpu_reset_n
 set_location_assignment PIN_P12 -to key1_n
 
 # SWITCH 0 & LEDR 0
-set_location_assignment PIN_AC9 -to sw0
-set_location_assignment PIN_F7 -to ledr0
+set_location_assignment PIN_F7  -to ledr[0]
+set_location_assignment PIN_F6  -to ledr[1]
+set_location_assignment PIN_G6  -to ledr[2]
+set_location_assignment PIN_G7  -to ledr[3]
+set_location_assignment PIN_J8  -to ledr[4]
+set_location_assignment PIN_J7  -to ledr[5]
+set_location_assignment PIN_K10 -to ledr[6]
+set_location_assignment PIN_K8  -to ledr[7]
+set_location_assignment PIN_H7  -to ledr[8]
+set_location_assignment PIN_J10 -to ledr[9]
+set_location_assignment PIN_AC9  -to sw[0]
+set_location_assignment PIN_AE10 -to sw[1]
+set_location_assignment PIN_AD13 -to sw[2]
+set_location_assignment PIN_AC8  -to sw[3]
+set_location_assignment PIN_W11  -to sw[4]
+set_location_assignment PIN_AB10 -to sw[5]
+set_location_assignment PIN_V10  -to sw[6]
+set_location_assignment PIN_AC10 -to sw[7]
+set_location_assignment PIN_Y11  -to sw[8]
+set_location_assignment PIN_AE19 -to sw[9]
 
 # I/O standards
 set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
@@ -121,8 +139,26 @@ set_instance_assignment -name IO_STANDARD "1.2 V" -to adc_convst
 set_instance_assignment -name IO_STANDARD "1.2 V" -to adc_sck
 set_instance_assignment -name IO_STANDARD "1.2 V" -to adc_sdi
 set_instance_assignment -name IO_STANDARD "1.2 V" -to adc_sdo
-set_instance_assignment -name IO_STANDARD "1.2 V" -to sw0
-set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ledr0
+set_instance_assignment -name IO_STANDARD "1.2 V" -to sw[0]
+set_instance_assignment -name IO_STANDARD "1.2 V" -to sw[1]
+set_instance_assignment -name IO_STANDARD "1.2 V" -to sw[2]
+set_instance_assignment -name IO_STANDARD "1.2 V" -to sw[3]
+set_instance_assignment -name IO_STANDARD "1.2 V" -to sw[4]
+set_instance_assignment -name IO_STANDARD "1.2 V" -to sw[5]
+set_instance_assignment -name IO_STANDARD "1.2 V" -to sw[6]
+set_instance_assignment -name IO_STANDARD "1.2 V" -to sw[7]
+set_instance_assignment -name IO_STANDARD "1.2 V" -to sw[8]
+set_instance_assignment -name IO_STANDARD "1.2 V" -to sw[9]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ledr[0]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ledr[1]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ledr[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ledr[3]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ledr[4]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ledr[5]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ledr[6]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ledr[7]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ledr[8]
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to ledr[9]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to i2s_bclk
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to i2s_lrck
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to i2s_din
@@ -157,7 +193,9 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to clk_50
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to hdmi_tx_clk
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to hdmi_tx_d[23]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to hdmi_tx_d[22]
-set_global_assignment -name SYSTEMVERILOG_FILE "AUDIO-PROCESSING/VOICE-EFFECTS/ring_modulation.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "AUDIO-PROCESSING/TEST-SIGNALS/impluse.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "AUDIO-PROCESSING/TEST-SIGNALS/test_signal.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "AUDIO-PROCESSING/VOICE-EFFECTS/robotic.sv"
 set_global_assignment -name SYSTEMVERILOG_FILE "AUDIO-PROCESSING/VOICE-EFFECTS/echo.sv"
 set_global_assignment -name SYSTEMVERILOG_FILE "AUDIO-PROCESSING/FILTER/second_order_filter.sv"
 set_global_assignment -name SYSTEMVERILOG_FILE "AUDIO-PROCESSING/FILTER/fourth_order_filter.sv"

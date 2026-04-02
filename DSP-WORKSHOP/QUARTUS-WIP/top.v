@@ -30,8 +30,8 @@ module top (
     output wire i2c_scl,  // i2c clock for adv7513
 
     // --- Filter ---
-    input  wire sw0,
-    output wire ledr0
+    input  wire [9:0] sw,
+    output wire [9:0] ledr
 );
 
   // turn the active-low button into active-high reset
@@ -130,25 +130,23 @@ module top (
   // ========================================================
   // Audio processing
   // ========================================================
-  wire signed [15:0] formatted_audio16, highpass_audio16, lowpass_audio16, filtered_audio16;
+  wire signed [15:0] formatted_audioraw16, formatted_audio16;
   wire signed [23:0] formatted_audio24;
-  wire audio_ready, highpass_ready, lowpass_ready, filter_ready;
+  wire audio_ready;
 
-  assign ledr0 = sw0;
-
+  assign formatted_audioraw16 = ($signed({4'b0000, raw_mic_data}) - 16'sd1650) <<< 5;
   audio_processing audio (
       .clk_50(clk_50),
       .reset(!cpu_reset_n),
-      .sw0(sw0),
-      .raw_audio(raw_mic_data),
-      .raw_valid(mic_data_valid),
+      .sw(sw),
+      .in_audio(formatted_audioraw16),
+      .in_valid(mic_data_valid),
       .out_audio16(formatted_audio16),
-      .audio_ready(audio_ready)
+      .out_ready(audio_ready)
   );
 
-  assign filtered_audio16 = formatted_audio16;
-  assign filter_ready = audio_ready;
-  assign formatted_audio24 = ({{8{filtered_audio16[15]}}, filtered_audio16}) <<< 8;
+  assign ledr = sw;
+  assign formatted_audio24 = ({{8{formatted_audio16[15]}}, formatted_audio16}) <<< 8;
   // ========================================================
   // I2S DAC output (runs in parallel with FFT+HDMI)
   // 50MHz -> ~3.125MHz BCLK (divide by 16)
@@ -214,7 +212,7 @@ module top (
       end
 
       // when ADC reports a sample is ready, send it to FFT
-      if (filter_ready) begin
+      if (audio_ready) begin
         fft_sample   <= formatted_audio24;
 
         sample_valid <= 1'b1;
