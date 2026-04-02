@@ -9,7 +9,6 @@ module robotic #(
     output logic signed [SAMPLE_WIDTH-1:0] data_out
 );
 
-
   always_ff @(posedge clk or posedge reset) begin
     if (reset) begin
 

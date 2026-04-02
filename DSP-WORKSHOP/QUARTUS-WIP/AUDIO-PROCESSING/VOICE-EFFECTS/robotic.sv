@@ -23,7 +23,8 @@ module robotic #(
       data_out <= '0;
     end 
     else if (data_valid) begin
-      data_out <= (data_in * sine_lut[index]) >>> 15;
+      mult_result = (data_in * sine_lut[index]);
+      data_out <= mult_result >>> 15;
 
       if (index == LUT_SIZE-1)
         index <= '0;
