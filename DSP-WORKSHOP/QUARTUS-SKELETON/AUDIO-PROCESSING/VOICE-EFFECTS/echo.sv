@@ -12,7 +12,8 @@ module echo #(
     always_ff @(posedge clk) begin
         if (reset) begin
 
-        end else if (data_valid) begin
+        end
+        else if (data_valid) begin
 
         end
     end

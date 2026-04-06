@@ -12,7 +12,7 @@ module robotic #(
   always_ff @(posedge clk or posedge reset) begin
     if (reset) begin
 
-    end 
+    end
     else if (data_valid) begin
 
     end

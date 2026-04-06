@@ -8,4 +8,7 @@ module audio_processing (
     output logic out_ready
 );
 
+    assign out_audio = in_audio;
+    assign out_ready = in_valid;
+
 endmodule

@@ -45,20 +45,19 @@ module audio_processing (
 
   // BPF
   fourth_order_filter #(
-      // Section 1: Gain g folded, scaled by 2^15
-      .STAGE1_B0(20'sd1142),
-      .STAGE1_B1(20'sd1225),    // Note: This is positive in this run
-      .STAGE1_B2(20'sd1142),
-      .STAGE1_A1(-20'sd51094),
-      .STAGE1_A2(20'sd22351),
+      .STAGE1_B0(20'sd308),
+      .STAGE1_B1(20'sd499),
+      .STAGE1_B2(20'sd308),
+      .STAGE1_A1(-20'sd58506),
+      .STAGE1_A2(20'sd27672),
 
-      // Section 2: Unity b0, scaled by 2^15
+      // Section 2: Unity b0
       .STAGE2_B0(20'sd32768),
-      .STAGE2_B1(-20'sd65536),  // Note: This is negative in this run
+      .STAGE2_B1(-20'sd65536), 
       .STAGE2_B2(20'sd32768),
-      .STAGE2_A1(-20'sd65285),  // Extreme proximity to -65536 limit
-      .STAGE2_A2(20'sd32519)
-  ) u_filter (
+      .STAGE2_A1(-20'sd63943),
+      .STAGE2_A2(20'sd31320)
+      ) u_filter (
       .clk  (clk_50),
       .reset(reset),
 
@@ -95,7 +94,7 @@ module audio_processing (
 
     if (sw[4]) begin
       out_ready <= in_valid;
-      out_audio <= echo_audio162;
+      out_audio <= echo_audio162 >>> 1;
     end
   end
 
