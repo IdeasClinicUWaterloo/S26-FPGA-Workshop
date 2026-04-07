@@ -96,6 +96,11 @@ module audio_processing (
       out_ready <= in_valid;
       out_audio <= echo_audio162 >>> 1;
     end
+
+    if (sw[5]) begin
+      out_ready <= in_valid;
+      out_audio <= in_audio >>> 2;
+    end
   end
 
 endmodule

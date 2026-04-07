@@ -193,6 +193,8 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to clk_50
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to hdmi_tx_clk
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to hdmi_tx_d[23]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to hdmi_tx_d[22]
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name SYSTEMVERILOG_FILE "AUDIO-PROCESSING/VOICE-EFFECTS/lower_volume.sv"
 set_global_assignment -name SYSTEMVERILOG_FILE "AUDIO-PROCESSING/TEST-SIGNALS/impluse.sv"
 set_global_assignment -name SYSTEMVERILOG_FILE "AUDIO-PROCESSING/TEST-SIGNALS/test_signal.sv"
 set_global_assignment -name SYSTEMVERILOG_FILE "AUDIO-PROCESSING/VOICE-EFFECTS/robotic.sv"
@@ -219,4 +221,3 @@ set_global_assignment -name QIP_FILE "FFT-MAGNITUDE/MAGNITUDE/mag_ram_bb.qip"
 set_global_assignment -name VERILOG_FILE "FFT-MAGNITUDE/MAGNITUDE/mag_ram.v"
 set_global_assignment -name VERILOG_FILE HDMI/renderer.v
 set_global_assignment -name VERILOG_FILE HDMI/video_timing.v
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
