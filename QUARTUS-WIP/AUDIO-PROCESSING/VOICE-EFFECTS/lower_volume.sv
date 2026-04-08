@@ -11,8 +11,10 @@ module lower_volume #(
   always_ff @(posedge clk or posedge reset) begin
     if (reset) begin
       data_out <= '0;
+
     end 
     else if (data_valid) begin
+  
       data_out <= data_in >>> 1;
     end
   end

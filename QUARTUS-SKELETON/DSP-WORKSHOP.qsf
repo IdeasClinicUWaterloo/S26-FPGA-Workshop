@@ -193,6 +193,7 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to clk_50
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to hdmi_tx_clk
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to hdmi_tx_d[23]
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to hdmi_tx_d[22]
+set_global_assignment -name SYSTEMVERILOG_FILE "AUDIO-PROCESSING/VOICE-EFFECTS/lower_volume.sv"
 set_global_assignment -name SYSTEMVERILOG_FILE "AUDIO-PROCESSING/TEST-SIGNALS/impluse.sv"
 set_global_assignment -name SYSTEMVERILOG_FILE "AUDIO-PROCESSING/TEST-SIGNALS/test_signal.sv"
 set_global_assignment -name SYSTEMVERILOG_FILE "AUDIO-PROCESSING/VOICE-EFFECTS/robotic.sv"
