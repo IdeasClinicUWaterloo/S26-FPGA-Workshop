@@ -1,18 +1,15 @@
 # FPGA Workshop S2026
 
-This is the IDEAS Clinic upcoming FPGA workshop repository.
-The objective is to allow students to experience various digital signal processing (DSP) methods through a set of comprehensive one-day activities which build upon each other.
-In this way it is similar to the W26 FPGA Workshop.
-Both may be run in alternate sequence to introduce students to different FPGA applications.
+Welcome to the intermediate FPGA workshop! 
 
 ## Table of Contents
 
-1. [Set-up](setup.ipynb)
-2. [Lower Volume](lower_volume.ipynb)
-3. [Robotic Voice Effect](robotic_voice.ipynb)
-4. [Echo Sound Effect](echo.ipynb)
-5. [Filters](filters.ipynb)
-6. [MATLAB for Filter Coefficients](matlab_filter.ipynb)
+1. [Set-up](workshop_instructions/setup.ipynb)
+2. [Lower Volume](workshop_instructions/lower_volume.ipynb)
+3. [Robotic Voice Effect](workshop_instructions/robotic_voice.ipynb)
+4. [Echo Sound Effect](workshop_instructions/echo.ipynb)
+5. [Filters](workshop_instructions/filters.ipynb)
+6. [MATLAB for Filter Coefficients](workshop_instructions/matlab_filter.ipynb)
 
 #### Resources
 - [SystemVerilog Reference Sheet](reference_sheet.ipynb)
