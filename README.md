@@ -12,7 +12,7 @@ Welcome to the intermediate FPGA workshop!
 6. [MATLAB for Filter Coefficients](workshop_instructions/matlab_filter.ipynb)
 
 #### Resources
-- [SystemVerilog Reference Sheet](workshop_instructionsreference_sheet.ipynb)
+- [SystemVerilog Reference Sheet](workshop_instructions/reference_sheet.ipynb)
 - [SystemVerilog Guide](workshop_instructions/systemverilog_guide/table_contents.ipynb)
 - [MATLAB Set-up](workshop_instructions/setup.ipynb)
 
