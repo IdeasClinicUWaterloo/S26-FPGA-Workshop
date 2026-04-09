@@ -45,4 +45,4 @@ Both may be run in alternate sequence to introduce students to different FPGA ap
 
 ## Setup
 
-Start here: [Setup Notebook](WORKSHOP/setup.ipynb)
+Start here: [Setup Notebook](workshop_instructions/setup.ipynb)
