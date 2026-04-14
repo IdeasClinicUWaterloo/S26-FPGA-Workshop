@@ -14,6 +14,9 @@ Start here: [Digital Logic](digital_logic.ipynb)
 5. [Add and Display](add_and_display.ipynb)
 6. [Binary to Decimal Conversion](bcd.ipynb)
 
+### Appendix
+7. [Test Benches](test_benches.ipynb)
+
 
 ## Learning Outcomes
 
