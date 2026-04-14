@@ -1,5 +1,6 @@
 module fourth_order_filter #(
     parameter int SAMPLE_WIDTH = 16,
+
     // =====================
     // STAGE 1
     // =====================
