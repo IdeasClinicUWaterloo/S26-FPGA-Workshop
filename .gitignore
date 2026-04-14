@@ -58,3 +58,4 @@ dump.fst
 *.fst
 .#*
 *.swp
+.ipynb_checkpoints/
