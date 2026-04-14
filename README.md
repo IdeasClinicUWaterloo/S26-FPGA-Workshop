@@ -1,8 +1,12 @@
-# FPGA Workshop S2026
+# FPGA Workshops S2026
 
-Welcome to the intermediate FPGA workshop! 
+Welcome to the Summer 2026 FPGA workshops page!
+These workshops are hosted by the [University of Waterloo IDEAS Clinic](https://uwaterloo.ca/engineering-ideas-clinic/).
 
-## Table of Contents
+The [Introductory Workshop](./intro_instructions/README.md) will teach you about FPGAs.
+After learning some fundamental concepts, you will be prepared to do the Intermediate FPGA workshop outlined below.
+
+## Intermediate Workshop Table of Contents
 
 1. [Set-up](workshop_instructions/setup.ipynb)
 2. [Lower Volume](workshop_instructions/lower_volume.ipynb)
