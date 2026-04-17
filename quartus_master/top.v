@@ -20,6 +20,7 @@ module top (
     output wire i2s_lrck,
     output wire i2s_din,
 
+    // --- HDMI Pins ---
     output wire [23:0] hdmi_tx_d,   // rgb pixel data
     output wire        hdmi_tx_de,  // data enable
     output wire        hdmi_tx_hs,  // horizontal sync
@@ -29,7 +30,7 @@ module top (
     inout  wire i2c_sda,  // i2c data for adv7513
     output wire i2c_scl,  // i2c clock for adv7513
 
-    // --- Filter ---
+    // --- User I/O ---
     input  wire [9:0] sw,
     output wire [9:0] ledr
 );
