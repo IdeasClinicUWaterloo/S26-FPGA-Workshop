@@ -12,9 +12,9 @@ module audio_processing (
   // Internal signals and registers
   // ------------------------------------------------------------------
 
-  logic signed [15:0] lower_vol_audio, modulated_audio, echo_audio, lpf_audio, bsf_audio;
-  logic signed [15:0] stage0_audio, stage1_audio, stage2_audio, stage3_audio; 
-  logic stage0_valid, stage1_valid, stage2_valid; 
+  logic signed [15:0] lower_vol_audio, modulated_audio, echo_audio, lpf_audio, bsf_audio, modulated_raw_audio;
+  logic signed [15:0] stage0_audio, stage1_audio, stage2_audio, stage3_audio, stage4_audio; 
+  logic stage0_valid, stage1_valid, stage2_valid, stage3_valid; 
   logic lpf_valid, bsf_valid;
 
   // ------------------------------------------------------------------
@@ -33,7 +33,7 @@ module audio_processing (
   assign stage0_audio = sw[0] ? lower_vol_audio : in_audio;
   assign stage0_valid = in_valid;
 
-  // Stage 1: Robotic Voice Effect (Ring Modulation)
+  // Stage 1: Robotic Voice Effect (Ring Modulation) with BSF
   robotic u_modulated (
     .clk(clk_50),
     .reset(reset),
@@ -42,15 +42,13 @@ module audio_processing (
     .data_out(modulated_audio)
   );
 
-  // Dampen constant tone from voice effect
+  // Dampen constant tone from voice effect BSF (185 - 195 Hz)
   fourth_order_filter #(
-    // Stage 1
-    .STAGE1_B0(20'sd28484), .STAGE1_B1(-20'sd57329), .STAGE1_B2(20'sd28860),
-    .STAGE1_A1(-20'sd64335), .STAGE1_A2(20'sd31621),
+    .STAGE1_B0(20'sd29176), .STAGE1_B1(-20'sd58334), .STAGE1_B2(20'sd29176),
+    .STAGE1_A1(-20'sd65481), .STAGE1_A2(20'sd32735),
 
-    // Stage 2
-    .STAGE2_B0(20'sd32768), .STAGE2_B1(-20'sd65092), .STAGE2_B2(20'sd32341),
-    .STAGE2_A1(-20'sd65282), .STAGE2_A2(20'sd32516)
+    .STAGE2_B0(20'sd32768), .STAGE2_B1(-20'sd65515), .STAGE2_B2(20'sd32768),
+    .STAGE2_A1(-20'sd65486), .STAGE2_A2(20'sd32737)
   ) u_bsf (
     .clk  (clk_50),
     .reset(reset),
@@ -77,13 +75,11 @@ module audio_processing (
 
   // Stage 3: Low-pass (muffled voice)
   fourth_order_filter #(
-    // Stage 1
-    .STAGE1_B0(20'sd209), .STAGE1_B1(20'sd263), .STAGE1_B2(20'sd209),
-    .STAGE1_A1(-20'sd49832), .STAGE1_A2(20'sd20665),
+    .STAGE1_B0(20'sd84), .STAGE1_B1(20'sd34), .STAGE1_B2(20'sd84),
+    .STAGE1_A1(-20'sd56338), .STAGE1_A2(20'sd24935),
 
-    // Stage 2
-    .STAGE2_B0(20'sd32768), .STAGE2_B1(-20'sd7142), .STAGE2_B2(20'sd32768),
-    .STAGE2_A1(-20'sd48390), .STAGE2_A2(20'sd28034)
+    .STAGE2_B0(20'sd32768), .STAGE2_B1(-20'sd37190),  .STAGE2_B2(20'sd32768),
+    .STAGE2_A1(-20'sd57785), .STAGE2_A2(20'sd29712)
   ) u_lpf (
     .clk  (clk_50),
     .reset(reset),
@@ -96,7 +92,18 @@ module audio_processing (
   assign stage3_audio = sw[3] ? lpf_audio : stage2_audio;
   assign stage3_valid = sw[3] ? lpf_valid : stage2_valid;
 
-  assign out_audio = stage3_audio;
-  assign out_ready = stage3_valid;
+  // Stage 4: Robotic Voice Effect (Ring Modulation) without BSF
+  robotic u_modulated (
+    .clk(clk_50),
+    .reset(reset),
+    .data_in(stage3_audio),
+    .data_valid(stage3_valid),
+    .data_out(modulated_raw_audio)
+  );
+  assign stage4_audio = sw[4] ? modulated_raw_audio : stage3_audio;
+  assign stage4_valid = stage3_valid;
+
+  assign out_audio = stage4_valid;
+  assign out_ready = stage4_valid;
 
 endmodule
